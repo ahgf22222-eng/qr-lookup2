@@ -4,7 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>業務窗口查詢</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"></script>
+<script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+  // Fallback: if unpkg failed to load jsQR, try another CDN
+  window.addEventListener('load', function(){
+    if (typeof jsQR === 'undefined') {
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+      document.head.appendChild(s);
+    }
+  });
+</script>
 <style>
   :root{
     --ink:#1c2b2d;
@@ -328,6 +338,18 @@ camBtn.addEventListener('click', ()=>{
 async function startCamera(){
   scanResult.innerHTML = '';
   scanStatus.textContent = '啟動相機中…';
+
+  // wait briefly for jsQR to load if not yet available
+  let waited = 0;
+  while(typeof jsQR === 'undefined' && waited < 3000){
+    await new Promise(r => setTimeout(r, 100));
+    waited += 100;
+  }
+  if(typeof jsQR === 'undefined'){
+    scanStatus.textContent = '掃描功能載入失敗，請檢查網路連線後重新整理頁面';
+    return;
+  }
+
   try{
     stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: 'environment' } }
